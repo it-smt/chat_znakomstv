@@ -6,11 +6,26 @@ from users.utils import generate_secret_token
 
 class User(AbstractUser):
     """Кастомная модель пользователя."""
+
+    class Gender(models.TextChoices):
+        """Гендер пользователя."""
+        FEMALE = 'Женский', 'Женский'
+        MALE = 'Мужской', 'Мужской'
+
+    class WhoLooking(models.TextChoices):
+        """Кого ищет пользователь."""
+        FEMALE = 'Девушек', 'Девушек'
+        MALE = 'Парней', 'Парней'
+        ALL = 'Без разницы', 'Без разницы'
+
     user_id = models.IntegerField(unique=True, verbose_name='ID пользователя телеграмм', blank=True, null=True)
     age = models.PositiveIntegerField(verbose_name='Возраст', blank=True, null=True)
     description = models.TextField(verbose_name='Описание', blank=True, null=True)
     city = models.CharField(max_length=255, verbose_name='Город', blank=True, null=True)
     auth_token = models.CharField(max_length=256, verbose_name='Токен авторизации', blank=True, null=True)
+    gender = models.CharField(max_length=7, verbose_name='Гендер', choices=Gender.choices, default=Gender.MALE)
+    who_looking = models.CharField(max_length=11, verbose_name='Кого ищет?', choices=WhoLooking.choices,
+                                   default=WhoLooking.MALE)
 
     class Meta(AbstractUser.Meta):
         ordering = ['-id']
@@ -30,7 +45,8 @@ class User(AbstractUser):
 
 class Photo(models.Model):
     """Модель фотографии пользователя."""
-    photo = models.ImageField(verbose_name='Фото', upload_to='users/photo/')
+    file_id = models.TextField(verbose_name='ID фото', blank=True, null=True)
+    photo = models.ImageField(verbose_name='Фото', upload_to='users/photo/', blank=True, null=True)
     user = models.ForeignKey(verbose_name='Пользователь', to=User, related_name='photos', on_delete=models.CASCADE)
 
     class Meta:
@@ -44,7 +60,7 @@ class Photo(models.Model):
 
 class Video(models.Model):
     """Модель видео пользователя."""
-    video = models.FileField(verbose_name='Видео', upload_to='users/video/')
+    video = models.FileField(verbose_name='Видео', upload_to='users/video/', blank=True, null=True)
     user = models.ForeignKey(verbose_name='Пользователь', to=User, related_name='videos', on_delete=models.CASCADE)
 
     class Meta:
