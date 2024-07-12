@@ -70,3 +70,19 @@ class Video(models.Model):
 
     def __str__(self):
         return f'{self.user.username} - видео'
+    
+
+class Complaint(models.Model):
+    """Модель жалобы."""
+    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='my_complaints', verbose_name='Обратившийся пользователь')
+    accused_user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='my_accusations', verbose_name='Обвиняемый пользователь')
+    description = models.TextField(verbose_name='Текст с информацией о нарушении')
+    date_created = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+
+    class Meta:
+        ordering = ['-date_created']
+        verbose_name = 'Жалоба'
+        verbose_name_plural = 'Жалобы'
+
+    def __str__(self) -> str:
+        return f'Жалоба на {self.accused_user.username} от {self.user.username}'
