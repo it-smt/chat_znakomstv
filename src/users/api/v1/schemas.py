@@ -1,6 +1,9 @@
+from datetime import datetime
+from typing import List
+
 from ninja import ModelSchema, Schema
 
-from users.models import User
+from ...models import User, Complaint
 
 
 class UserLogin(ModelSchema):
@@ -60,4 +63,37 @@ class QuestionnaireSuccess(ModelSchema):
 
 class QuestionnaireFailed(Schema):
     """Схема неудачного получения анкеты."""
+    msg: str
+
+
+class CreateComplaint(ModelSchema):
+    """Схема для создания жалобы."""
+    user: int
+    accused_user: int
+    description: str | None
+
+    class Meta:
+        model = Complaint
+        fields = ['user', 'accused_user', 'description']
+
+
+class CreateComplaintSuccess(Schema):
+    """Схема успешного создания жалобы."""
+    msg: str
+
+
+class CreateComplaintFailed(CreateComplaintSuccess):
+    """Схема неудачного создания жалобы."""
+    pass
+
+
+class ComplaintSchema(Schema):
+    """Схема жалобы."""
+    user__username: str
+    accused_user__username: str
+    description: str | None
+    date_created: datetime
+
+
+class FailedComplaints(Schema):
     msg: str

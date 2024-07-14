@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from users.utils import generate_secret_token
+from .utils import generate_secret_token
 
 
 class User(AbstractUser):

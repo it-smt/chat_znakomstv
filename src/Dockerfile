@@ -1,12 +1,11 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
-RUN mkdir /web
-WORKDIR /web
+WORKDIR /app
 
-COPY requirements.txt /web/
+COPY . /app/
+RUN apt-get update && apt-get install -y curl && apt-get clean
+RUN pip install -r requirements.txt
 
-RUN pip install --upgrade pip && pip install -r requirements.txt
-
-ADD . /web/
-
-RUN python manage.py makemigrations && python manage.py migrate
+CMD python manage.py migrate \
+    && python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='root').exists() or User.objects.create_superuser('root', 'root@example.com', 'root')" \
+    && python manage.py runserver 0.0.0.0:8000

@@ -1,14 +1,16 @@
 import json
 import logging
 import random
+from typing import List
 
 from django.http import JsonResponse
 from ninja import Router
 
 from .bearers import AuthTokenBearer
 from .schemas import UserSuccessLogin, UserFailedLogin, UserRegister, UserSuccessRegister, UserFailedRegister, \
-    QuestionnaireSuccess, QuestionnaireFailed
-from users.models import User
+    QuestionnaireSuccess, QuestionnaireFailed, CreateComplaint, CreateComplaintSuccess, CreateComplaintFailed, \
+    FailedComplaints, ComplaintSchema
+from ...models import User, Complaint
 
 router = Router()
 
@@ -47,17 +49,7 @@ def register_user(request, body: UserRegister):
 @router.get('random_questionnaire/', auth=AuthTokenBearer(),
             response={200: QuestionnaireSuccess, 404: QuestionnaireFailed})
 def get_random_questionnaire(request):
-    """
-    Вывод:
-     - Возраст
-     - Город
-     - Описание
-     - Фото/Видео
-    Фильтрация:
-     - кого ищет
-     - Возраст
-     - Город
-    """
+    """Функция для получения случайной анкеты."""
     request_user = request.auth
     gender = User.Gender.MALE if request_user.who_looking == User.WhoLooking.MALE else User.Gender.FEMALE
     if request_user.who_looking == User.WhoLooking.ALL:
@@ -74,3 +66,30 @@ def get_random_questionnaire(request):
         user = random.choices(users)[0]
         logger.debug(f'Вот пользователь, которой подходит под ваш запрос: {user}')
         return JsonResponse(dict(QuestionnaireSuccess.from_orm(user)), safe=False, status=200)
+
+
+@router.post('create_complaint/', auth=AuthTokenBearer(),
+             response={201: CreateComplaintSuccess, 400: CreateComplaintFailed})
+def create_complaint(request, body: CreateComplaint):
+    """Функция для создания жалобы на пользователя."""
+    try:
+        complaint = Complaint()
+        complaint.user = User.objects.get(id=body.user)
+        complaint.accused_user = User.objects.get(id=body.accused_user)
+        complaint.description = body.description
+        complaint.save()
+    except Exception as e:
+        return JsonResponse({'msg': e}, safe=False, status=400)
+    return JsonResponse({'msg': f'Жалоба на пользователя {complaint.accused_user.first_name} успешно отправлена.'})
+
+
+@router.get('get_complaints/', auth=AuthTokenBearer(), response={200: List[ComplaintSchema], 400: FailedComplaints})
+def get_complaints(request):
+    """Получает все жалобы."""
+    try:
+        complaints = list(
+            Complaint.objects.all().values('user__username', 'accused_user__username', 'description', 'date_created'))
+        print(complaints)
+    except Exception as e:
+        return JsonResponse({'msg': f'{type(e)}: {e}'}, safe=False, status=400)
+    return JsonResponse(complaints, safe=False, status=200)
